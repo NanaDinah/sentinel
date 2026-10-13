@@ -4,6 +4,7 @@ import os
 
 import boto3
 
+from sentinel.alerts import send_alert
 from sentinel.checks.s3_public import check_s3_public_buckets
 from sentinel.checks.security_groups import check_open_security_groups
 from sentinel.store import save_findings
@@ -29,7 +30,12 @@ def lambda_handler(event, context):
     table_name = os.environ.get("FINDINGS_TABLE")
     if table_name:
         table = boto3.resource("dynamodb").Table(table_name)
-        summary = save_findings(table, findings)
+        new_findings = []
+        summary = save_findings(table, findings, new_findings=new_findings)
+
+        topic_arn = os.environ.get("ALERT_TOPIC_ARN")
+        if topic_arn:
+            summary["alerts_sent"] = send_alert(boto3.client("sns"), topic_arn, new_findings)
 
     logger.info("Sentinel scan finished: %d findings, %s", len(findings), summary)
     body = {"findings": [f.to_dict() for f in findings], "summary": summary}

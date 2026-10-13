@@ -29,15 +29,19 @@ def _open_items(table):
         kwargs["ExclusiveStartKey"] = page["LastEvaluatedKey"]
 
 
-def save_findings(table, findings, now=None):
-    """Upsert current findings as OPEN and mark vanished ones RESOLVED."""
+def save_findings(table, findings, now=None, new_findings=None):
+    """Upsert current findings as OPEN and mark vanished ones RESOLVED.
+
+    If a list is passed as new_findings, findings that just became OPEN
+    (first time seen, or reopened after being resolved) are appended to it.
+    """
     now = now or datetime.now(timezone.utc).isoformat()
     current = set()
 
     for f in findings:
         fid = finding_id(f)
         current.add(fid)
-        table.update_item(
+        response = table.update_item(
             Key={"finding_id": fid},
             UpdateExpression=(
                 "SET #rule=:rule, #sev=:sev, #res=:res, #desc=:desc, #rem=:rem, "
@@ -54,7 +58,11 @@ def save_findings(table, findings, now=None):
                 ":open": "OPEN",
                 ":now": now,
             },
+            ReturnValues="ALL_OLD",
         )
+        previous = response.get("Attributes", {})
+        if new_findings is not None and previous.get("status") != "OPEN":
+            new_findings.append(f)
 
     resolved = 0
     for item in list(_open_items(table)):
