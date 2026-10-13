@@ -1,10 +1,12 @@
 import json
 import logging
+import os
 
 import boto3
 
 from sentinel.checks.s3_public import check_s3_public_buckets
 from sentinel.checks.security_groups import check_open_security_groups
+from sentinel.store import save_findings
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -21,6 +23,14 @@ def run_scan(s3=None, ec2=None):
 
 def lambda_handler(event, context):
     logger.info("Sentinel scan started")
-    findings = [f.to_dict() for f in run_scan()]
-    logger.info("Sentinel scan finished: %d findings", len(findings))
-    return {"statusCode": 200, "body": json.dumps({"findings": findings})}
+    findings = run_scan()
+
+    summary = {}
+    table_name = os.environ.get("FINDINGS_TABLE")
+    if table_name:
+        table = boto3.resource("dynamodb").Table(table_name)
+        summary = save_findings(table, findings)
+
+    logger.info("Sentinel scan finished: %d findings, %s", len(findings), summary)
+    body = {"findings": [f.to_dict() for f in findings], "summary": summary}
+    return {"statusCode": 200, "body": json.dumps(body)}
