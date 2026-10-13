@@ -13,4 +13,10 @@ resource "aws_lambda_function" "sentinel" {
   filename         = data.archive_file.sentinel.output_path
   source_code_hash = data.archive_file.sentinel.output_base64sha256
   timeout          = 60
+
+  environment {
+    variables = {
+      FINDINGS_TABLE = aws_dynamodb_table.findings.name
+    }
+  }
 }

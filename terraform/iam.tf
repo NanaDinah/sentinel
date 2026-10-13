@@ -45,3 +45,18 @@ resource "aws_iam_role_policy" "audit_read" {
   role   = aws_iam_role.sentinel.id
   policy = data.aws_iam_policy_document.audit_read.json
 }
+
+# Lets the function write findings, but only to its own table
+data "aws_iam_policy_document" "findings_write" {
+  statement {
+    sid       = "WriteOwnFindingsTable"
+    actions   = ["dynamodb:UpdateItem", "dynamodb:Scan"]
+    resources = [aws_dynamodb_table.findings.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "findings_write" {
+  name   = "sentinel-findings-write"
+  role   = aws_iam_role.sentinel.id
+  policy = data.aws_iam_policy_document.findings_write.json
+}
