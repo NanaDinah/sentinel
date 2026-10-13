@@ -68,3 +68,21 @@ def test_reappearing_finding_reopens(table):
     item = get(table, f)
     assert item["status"] == "OPEN"
     assert "resolved_at" not in item
+
+
+def test_new_findings_collects_only_newly_opened(table):
+    f = make_finding()
+
+    new = []
+    save_findings(table, [f], now="2026-10-14T10:00:00", new_findings=new)
+    assert new == [f]
+
+    new = []
+    save_findings(table, [f], now="2026-10-15T10:00:00", new_findings=new)
+    assert new == []
+
+    save_findings(table, [], now="2026-10-16T10:00:00")
+
+    new = []
+    save_findings(table, [f], now="2026-10-17T10:00:00", new_findings=new)
+    assert new == [f]
