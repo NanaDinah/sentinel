@@ -16,7 +16,8 @@ resource "aws_lambda_function" "sentinel" {
 
   environment {
     variables = {
-      FINDINGS_TABLE = aws_dynamodb_table.findings.name
+      FINDINGS_TABLE  = aws_dynamodb_table.findings.name
+      ALERT_TOPIC_ARN = aws_sns_topic.alerts.arn
     }
   }
 }

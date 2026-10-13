@@ -60,3 +60,18 @@ resource "aws_iam_role_policy" "findings_write" {
   role   = aws_iam_role.sentinel.id
   policy = data.aws_iam_policy_document.findings_write.json
 }
+
+# Lets the function send alerts, but only to its own topic
+data "aws_iam_policy_document" "alerts_publish" {
+  statement {
+    sid       = "PublishToOwnAlertTopic"
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alerts.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "alerts_publish" {
+  name   = "sentinel-alerts-publish"
+  role   = aws_iam_role.sentinel.id
+  policy = data.aws_iam_policy_document.alerts_publish.json
+}
