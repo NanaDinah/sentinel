@@ -5,6 +5,8 @@ import os
 import boto3
 
 from sentinel.alerts import send_alert
+from sentinel.checks.iam_keys import check_old_access_keys
+from sentinel.checks.iam_mfa import check_users_without_mfa
 from sentinel.checks.s3_public import check_s3_public_buckets
 from sentinel.checks.security_groups import check_open_security_groups
 from sentinel.store import save_findings
@@ -13,12 +15,15 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def run_scan(s3=None, ec2=None):
+def run_scan(s3=None, ec2=None, iam=None):
     s3 = s3 or boto3.client("s3")
     ec2 = ec2 or boto3.client("ec2")
+    iam = iam or boto3.client("iam")
     findings = []
     findings.extend(check_s3_public_buckets(s3))
     findings.extend(check_open_security_groups(ec2))
+    findings.extend(check_old_access_keys(iam))
+    findings.extend(check_users_without_mfa(iam))
     return findings
 
 
