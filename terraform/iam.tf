@@ -31,6 +31,7 @@ data "aws_iam_policy_document" "audit_read" {
       "ec2:DescribeSecurityGroups",
       "ec2:DescribeVolumes",
       "iam:ListUsers",
+      "iam:GetLoginProfile",
       "iam:ListAccessKeys",
       "iam:ListMFADevices",
       "cloudtrail:DescribeTrails",
