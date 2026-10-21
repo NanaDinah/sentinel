@@ -1,4 +1,5 @@
 import boto3
+from botocore.exceptions import ClientError
 import pytest
 from moto import mock_aws
 
@@ -70,4 +71,17 @@ def test_only_the_user_missing_mfa_is_flagged(iam):
 
 
 def test_account_with_no_users_has_no_findings(iam):
+    assert check_users_without_mfa(iam) == []
+
+def test_check_is_skipped_when_get_login_profile_is_denied(iam, monkeypatch):
+    add_console_user(iam, "alice")
+
+    def denied(**kwargs):
+        raise ClientError(
+            {"Error": {"Code": "AccessDenied", "Message": "explicit deny in a service control policy"}},
+            "GetLoginProfile",
+        )
+
+    monkeypatch.setattr(iam, "get_login_profile", denied)
+
     assert check_users_without_mfa(iam) == []
