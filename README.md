@@ -87,3 +87,7 @@ GitHub Actions runs three jobs on every push and pull request:
 - Check that CloudTrail is enabled
 - Scan multiple regions
 - Deploy through a CI pipeline using GitHub OIDC instead of manual `terraform apply`
+
+---
+
+Tracking code: WTC-AW2E2AG2
